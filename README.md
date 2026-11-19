@@ -1,6 +1,6 @@
 # API REST de países del mundo
 
-API de servidor construida con Node.js, Express y SQLite. Administra países usando una arquitectura por capas: rutas → controladores → servicios → repositorios. No incluye frontend.
+Aplicación web para administrar países. Incluye un backend REST con Node.js, Express y SQLite, y un frontend independiente con HTML, CSS, JavaScript y Vite. El backend conserva la arquitectura por capas: rutas → controladores → servicios → repositorios.
 
 ## Requisitos
 
@@ -9,12 +9,33 @@ API de servidor construida con Node.js, Express y SQLite. Administra países usa
 
 ## Configuración y ejecución
 
+La aplicación se ejecuta con **dos terminales**, una para el backend y otra para el frontend.
+
+### Terminal 1 — Backend
+
+Desde la carpeta raíz `proyecto-backend/`:
+
 ```bash
 npm install
 npm run dev
 ```
 
-La API queda disponible en `http://localhost:3000`. Al arrancar, crea automáticamente `data/app.db`, crea las tablas y ejecuta los scripts SQL de `src/db/migrations/` una sola vez por versión. La variable `DB_FILE` en `.env` permite cambiar la ruta de la base de datos.
+La API queda disponible en `http://localhost:3000`.
+
+### Terminal 2 — Frontend
+
+Desde `proyecto-backend/frontend/`:
+
+```bash
+npm install
+npm run dev
+```
+
+Abre en el navegador la dirección que indique Vite, normalmente `http://localhost:5173`. El frontend consume `http://localhost:3000/api/countries`.
+
+Si necesitas cambiar la URL de la API, crea `frontend/.env` usando `frontend/.env.example` como referencia y configura `VITE_API_URL`.
+
+ Al arrancar, crea automáticamente `data/app.db`, crea las tablas y ejecuta los scripts SQL de `src/db/migrations/` una sola vez por versión. La variable `DB_FILE` en `.env` permite cambiar la ruta de la base de datos.
 
 > El script inicial contiene una selección de países de ejemplo para que la API se pueda probar de inmediato. Las poblaciones son aproximadas y no deben tratarse como cifras oficiales exactas. Para cubrir todos los países reconocidos, amplíe `002_seed_countries.sql` con la fuente de datos que exija su curso.
 
@@ -38,6 +59,12 @@ proyecto-backend/
 │   ├── controllers/countries.controller.js
 │   ├── services/countries.service.js
 │   └── repositories/countries.repository.js
+├── frontend/              # interfaz web independiente (Vite)
+│   ├── index.html
+│   ├── package.json
+│   └── src/
+│       ├── main.js
+│       └── style.css
 ├── data/                  # se crea automáticamente
 ├── .env
 └── package.json
@@ -133,3 +160,40 @@ Los resultados indicados son los estados esperados al ejecutar los comandos; adj
 - `numeric_code` es texto, no entero, para conservar códigos como `004`.
 - Los errores de validación se responden con `400`; duplicados con `409`; inexistentes con `404`.
 - El archivo SQLite se genera en la primera ejecución y no necesita crearse manualmente.
+
+
+## Interfaz web y consumo de API
+
+El frontend está implementado con JavaScript y Fetch API, sin duplicar las reglas de negocio del backend.
+
+| Acción en la interfaz | Petición HTTP |
+|---|---|
+| Cargar listado | `GET /api/countries` |
+| Crear país | `POST /api/countries` |
+| Editar país | `PUT /api/countries/:id` |
+| Eliminar país | `DELETE /api/countries/:id` |
+
+La vista presenta una tabla dinámica, búsqueda, tarjetas de resumen, formulario modal, validaciones de campos y confirmación antes de eliminar. Los mensajes visuales informan el resultado de las peticiones; por ejemplo, `201 Created` al crear, `400 Bad Request` por datos inválidos, `404 Not Found` si el registro no existe y `409 Conflict` ante duplicados.
+
+## Configuración CORS
+
+El middleware `cors` está configurado en `src/app.js`. Por defecto permite el origen `http://localhost:5173` y `http://127.0.0.1:5173`, que corresponden al servidor local de Vite. Las solicitudes sin encabezado `Origin` (como Postman o cURL) también se permiten.
+
+Los orígenes autorizados se pueden modificar mediante `CORS_ORIGINS` en el `.env`, separados por comas. Por ejemplo:
+
+```env
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+## Flujo recomendado para la demostración
+
+1. Iniciar el backend en una terminal.
+2. Iniciar Vite desde la carpeta `frontend` en otra terminal.
+3. Abrir `http://localhost:5173`.
+4. Crear un país de prueba y verificar el mensaje de creación.
+5. Editar el registro y comprobar el cambio en la tabla.
+6. Buscar el país usando el cuadro de búsqueda.
+7. Eliminar el registro y aceptar la confirmación.
+8. Mostrar en el navegador o en las herramientas de desarrollo que las peticiones se envían a `http://localhost:3000/api/countries`.
+
+Los estados y mensajes descritos son el comportamiento implementado en el cliente; las capturas de evidencia deben obtenerse ejecutando la aplicación localmente.

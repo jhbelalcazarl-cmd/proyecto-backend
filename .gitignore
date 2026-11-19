@@ -1,5 +1,11 @@
-﻿node_modules/
+node_modules/
 .env
+*.db
+*.db-shm
+*.db-wal
+frontend/node_modules/
+frontend/dist/
+frontend/.env
 data/*.db
 data/*.sqlite
 data/*.sqlite3
